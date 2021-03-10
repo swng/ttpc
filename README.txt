@@ -1,17 +1,22 @@
-“à—e
-@ƒeƒgƒŠƒX‚ÌŠJ–‹ƒp[ƒtƒFƒNƒgƒNƒŠƒA‚Ì—ûK‚ª‚Å‚«‚Ü‚·B
+Original at https://github.com/sakuramochi84/ttpc
+Hosted by davdav at https://davdav1233.github.io/ttpc/
+An English translation was made by thickBUT on discord (https://discordapp.com/channels/147897421169426434/147897421169426434/491815092934017024)
+This is just me hosting the English port. Play it at https://swng.github.io/ttpc/index.html
 
-—V‚Ñ•û
+å†…å®¹
+ã€€ãƒ†ãƒˆãƒªã‚¹ã®é–‹å¹•ãƒ‘ãƒ¼ãƒ•ã‚§ã‚¯ãƒˆã‚¯ãƒªã‚¢ã®ç·´ç¿’ãŒã§ãã¾ã™ã€‚
+
+éŠã³æ–¹
 --------------------------------------------------------
-@1. https://github.com/sakuramochi84/ttpc ‚ğŠJ‚­
-@2.uClone or downloadv‚ğƒNƒŠƒbƒN
-@3.uDownload ZIPv‚©‚çƒtƒ@ƒCƒ‹ˆê®‚ğƒ_ƒEƒ“ƒ[ƒh
-@4. ƒ[ƒJƒ‹‚Ì“K“–‚ÈêŠiƒfƒXƒNƒgƒbƒv‚È‚Çj‚É‰ğ“€
-@5. ƒuƒ‰ƒEƒUiGoogle Chrome‚âIE‚È‚Çj‚Åindex.html‚ğŠJ‚­
+ã€€1. https://github.com/sakuramochi84/ttpc ã‚’é–‹ã
+ã€€2.ã€ŒClone or downloadã€ã‚’ã‚¯ãƒªãƒƒã‚¯
+ã€€3.ã€ŒDownload ZIPã€ã‹ã‚‰ãƒ•ã‚¡ã‚¤ãƒ«ä¸€å¼ã‚’ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰
+ã€€4. ãƒ­ãƒ¼ã‚«ãƒ«ã®é©å½“ãªå ´æ‰€ï¼ˆãƒ‡ã‚¹ã‚¯ãƒˆãƒƒãƒ—ãªã©ï¼‰ã«è§£å‡
+ã€€5. ãƒ–ãƒ©ã‚¦ã‚¶ï¼ˆGoogle Chromeã‚„IEãªã©ï¼‰ã§index.htmlã‚’é–‹ã
 --------------------------------------------------------
 
-íœ‚Ìd•û
-@ƒ_ƒEƒ“ƒ[ƒh‚µ‚½ƒtƒ@ƒCƒ‹‚ğ‚·‚×‚Äíœ‚·‚ê‚Î‚æ‚¢‚Å‚·B
+å‰Šé™¤ã®ä»•æ–¹
+ã€€ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ã—ãŸãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã™ã¹ã¦å‰Šé™¤ã™ã‚Œã°ã‚ˆã„ã§ã™ã€‚
 
-2018/02/12 ‚³‚­‚ç‚à‚¿
+2018/02/12 ã•ãã‚‰ã‚‚ã¡
 
