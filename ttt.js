@@ -1,609 +1,1261 @@
-<html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <title>TETRIS Perfect Clear Challenge</title>
-  <!-- �O�� css �Ǎ� -->
-  <link href="ttt.css" rel="stylesheet" type="text/css">
-  <!-- �ڍד���ɂ��Ă͊e js �t�@�C�������Q�Ƃ������� -->
-  <script type="text/javascript" src="jsgmod.js"></script>
-  <script type="text/javascript" src="data.js"></script>
-  <script type="text/javascript" src="problemData.js"></script>
-  <script type="text/javascript" src="problem.js"></script>
-  <script type="text/javascript" src="ttt.js"></script>
-  <!--
-  ������
-  ・(���ɂȂ�)
--->
-</head>
-<body onLoad="Execute()">
-  <form name="fMain">
+/*========================================================================================
+ ���� ttt.js ����
+========================================================================================*/
+/*----------------------------------------------------------------------------------------
+ ���� �O���[�o���ϐ��ꗗ ����
+----------------------------------------------------------------------------------------*/
+var gButton;          // �����ꂽ�{�^���̖��O�B�t���[���I�����ɏ�����(�󕶎�����)�����
+var gLyrSections;     // �Z�N�V�����I�����C���[( LaYeR )
+var gLyrPerform;      // �Q�[�����C���[
+var gLyrPreferences;  // �ݒ背�C���[
+var gScene;           // �V�[����
+var gPrevScene;       // �O�̃t���[���ł̃V�[����( PREVious SCENE )
+/*
+�� �V�[���\��
+ select_sections �� preferences
+   ����
+ perform
+*/
+var gKeys;            // �L�[�̖��O
+var gSelectForms = ['key_left', 'key_right', 'key_softdrop', 'key_harddrop',
+                    'key_rot_right', 'key_rot_left' , 'key_hold' , 'key_guide'];  // �L�[�I���{�b�N�X�̖��O
+/*
+ �L�[��ǉ�����ۂɂ� LoadData() ����� SavePreferences() �ւ̒ǉ��A�܂� Key**() (�L�[����
+ �擾���\�b�h)����ѐݒ�Z���N�g�{�b�N�X�̒ǉ���Y��Ȃ��ł��������B
+*/
 
-    <div id="list_sections" class="layer">
-      <p id="title">
-        TETRIS Perfect Clear Challenge<br>
-      </p>
+var gCurSectionId;    // �I��( CURrent )�̃Z�N�V���� ID
+var gCurProblemId;    // �I�𒆂̖�� ID
+var gCurProblem;      // �I�𒆂̖��I�u�W�F�N�g
+var gCurProblemReq;   // ���m���}
+var gQueue;           // �l�N�X�g��
+var gCurMino;
+var gCurHold;
+var gCurUseGuideFlg   // �K�C�h�𗘗p���邩�ǂ���
+var gCurX;
+var gCurY;
+var gCurDir;
+var gNdCount;         // ( Natural Drop COUNT )
+var gDfCount;         // ( Display Features COUNT )
+var gCurGuide;        // ���݂̃K�C�h
+var gGuidesQueue;     // �K�C�h�z��
 
-      <p>
-        "I want to master the Perfect Clear Opener for competitive Tetris!"<br>
-        If you've ever had that thought, then this is the course for you.<br>
-        Out of the 840 opening piece bag combinations, <br>
-        you can study all 711 bags that can be used for the Perfect Clear Opener.<br>
-      </p>
-      <p>
-        <b>If you cannot find a solution, press "R" and a guide will appear.</b><br>
-        Please reference <a href="TetrisPerfectClear.xlsx">this</a> for the patterns presented and their PC success rates.
-      </p>
+var gLineClearCount;  // ���C���������o�̃J�E���g
+var gTSpinType;       // 0= T �X�s���Ȃ�, 1= T �X�s���E�~�j, 2=T �X�s��
+var gRens;            // �p������ REN ��
+var gIsReadyToB2b;    // ���� BACK to BACK �ɂȂ肤��?
 
-      <p>
-        <input type="button" value="Key Configuration" onClick="gButton='preferences'">
-      </p>
-      <p>
-        ・Key Configurations Are Saved By Cookies.<br>
-        ・Please Restart If I Minos Move Too Quickly.<br>
-        ・Please Restart If I Minos Move Choppy.<br>
-      </p>
-      <!
-      --�Z�N�V������ҏW�����ꍇ�� data.js �� SectionTitle �ɂ����f���Ă�������-->
-      <p>
-        Introduction<br>
-        <input type="button" value="1  Let's Learn the PC Opener [With Guide]" onClick="gButton='section1'">
-        <img src="img/clear.png" class="clear" id="clear0"><br>
-      </p>
+/*----------------------------------------------------------------------------------------
+ ���� �e���ւ̃A�N�Z�X�ݒ� ����
 
-      <p>
-        I Mino Vertical Placements 61%<br>
-        <input type="button" value="2  「I Mino Vertical Placements」 14Patterns [With Guide]" onClick="gButton='section2'">
-        <img src="img/clear.png" class="clear" id="clear1"><br>
-        <input type="button" value="3  「I Mino Vertical Placements」 20Q" onClick="gButton='section3'">
-        <img src="img/clear.png" class="clear" id="clear2"><br>
-      </p>
+ ���f�[�^�� problem.js ���ɋL�ڂ���Ă��܂��B
+----------------------------------------------------------------------------------------*/
+var gProblems = getProblems();
+var gCurProgmeIdList = [];
+var gProblemsCleared = [];
+for(var i = 0; i < SECTION_NUM; i++){
+  gProblemsCleared[i] = false;
+}
 
-      <p>
-        I Mino Horizontal Placements 84%<br>
-        <input type="button" value="4  「Starting I Mino 1st Row」 6 Patterns [With Guide]" onClick="gButton='section4'">
-        <img src="img/clear.png" class="clear" id="clear3"><br>
+/*----------------------------------------------------------------------------------------
+ ���� ������ ����
 
-        <input type="button" value="5  「Starting I Mino 1st Row」 20Q" onClick="gButton='section5'">
-        <img src="img/clear.png" class="clear" id="clear4"><br>
+ �N������ 1 �x�����Ăяo����܂��B�o�߃t���[������ 0 �Ƃ��Ĉ����܂��B
+----------------------------------------------------------------------------------------*/
+function Setup(){
+  SetupLayers();
+  gButton = '';
+  gPrevScene = '';
+  gScene = 'select_section';
+  LoadData();
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���C���[������ ����
 
-        <input type="button" value="6  「All Laying Down Form」 4 Patterns [With Guide]" onClick="gButton='section6'">
-        <img src="img/clear.png" class="clear" id="clear5"><br>
+ ���C���[�̃T�C�Y���� css �t�@�C���ŁA���e�� HTML ��Œ�`���Ă��܂��B
+----------------------------------------------------------------------------------------*/
+function SetupLayers(){
+  gLyrSections = new Layer('list_sections');
+  gLyrPerform = new Layer('perform');
+  gLyrPreferences = new Layer('preferences');
+}
+/*----------------------------------------------------------------------------------------
+ ���� �Ǎ� ����
 
-        <input type="button" value="7  「All Laying Down Form」 20Q" onClick="gButton='section7'">
-        <img src="img/clear.png" class="clear" id="clear6"><br>
+ �N�b�L�[����ݒ�Ɛi����ǂݍ��݂܂��B
+----------------------------------------------------------------------------------------*/
+function LoadData(){
+  // �L�[�ݒ�̓Ǎ�
+  gKeys = [];
+  gKeys.push(Load('MoveLeft', DEFAULT_KEY_MOVE_LEFT));
+  gKeys.push(Load('MoveRight', DEFAULT_KEY_MOVE_RIGHT));
+  gKeys.push(Load('SoftDrop', DEFAULT_KEY_SOFTDROP));
+  gKeys.push(Load('HardDrop', DEFAULT_KEY_HARDDROP));
+  gKeys.push(Load('RotateRight', DEFAULT_KEY_ROTATE_RIGHT));
+  gKeys.push(Load('RotateLeft', DEFAULT_KEY_ROTATE_LEFT));
+  gKeys.push(Load('Hold', DEFAULT_KEY_HOLD));
+  gKeys.push(Load('Guide', DEFAULT_KEY_GUIDE));
+  // �i���̓Ǎ�
+  for(var i = 0; i < SECTION_NUM; i++){
+    gProblemsCleared[i] = (Load('Prg' + i, '0') == '1');
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �t���[�������� ����
 
-        <input type="button" value="8  「IILO Form」 2 Patterns [With Guide]" onClick="gButton='section8'">
-        <img src="img/clear.png" class="clear" id="clear7"><br>
+ 1 �t���[���� 1 ��Ăяo����鏈���ł��B�t���[���Ǘ��� jsmod.js �ōs���Ă��܂��B
+----------------------------------------------------------------------------------------*/
+function Main(){
+  // �V�[�����ς���Ă���ΐ؂�ւ�
+  if(gPrevScene != gScene){
+    TerminateScene(gPrevScene);
+    SetupScene(gScene);
+    //�u�O�̃V�[���v�̍X�V
+    gPrevScene = gScene;
+  }
+  PerformScene(gScene);
+  gButton = '';
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[���J�n ����
+----------------------------------------------------------------------------------------*/
+function SetupScene(scene){
+  switch(scene){
+  case 'select_section':
+    gLyrSections.Show();
+    RefreshProblemButtons();
+    gCurUseGuideFlg = false;
+    break;
+  case 'perform':
+    gCurMino = null;
+    gCurHold = null;
+    PrepareProblem();
+    Refresh();
+    gLyrPerform.Show();
+    window.scroll(0, 0);    // ��ԏ�փX�N���[��
+    break;
+  case 'perform_falling':
+    break;
+  case 'perform_failed':
+    Refresh();
+    Say('perform_hint', 'Press Any Key To Retry');
+    Say('perform_caption', 'Failed...');
+    break;
+  case 'perform_cleared':
+    Refresh();
+    gCurUseGuideFlg = false;
+    var curProblemId = gCurProgmeIdList[gCurProblemId];
+    Say('perform_caption', 'Clear!');
+    break;
+  case 'perform_guide':
+    Refresh();
+    gCurUseGuideFlg = true;
+    Say('perform_hint', 'Press Any Key To Begin');
+    Say('perform_caption', 'Using Guide');
+    break;
+  case 'preferences':
+    // �L�[�ݒ�̕\�����f
+    for(var i = 0; i < gKeys.length; i++){
+      document.getElementById(gSelectForms[i]).value = gKeys[i];
+    }
+    gLyrPreferences.Show();
+    window.scroll(0, 0);    // ��ԏ�փX�N���[��
+    break;
+  default:
+    gScene = 'select_section';
+    break;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[���I�� ����
+----------------------------------------------------------------------------------------*/
+function TerminateScene(scene){
+  switch(scene){
+  case 'select_section':
+    gLyrSections.Hide();
+    break;
+  case 'perform':
+    if(gScene == 'select_section') gLyrPerform.Hide();
+    break;
+  case 'perform_falling':
+    if(gScene == 'select_section') gLyrPerform.Hide();
+    break;
+  case 'perform_failed':
+    if(gScene == 'select_section') gLyrPerform.Hide();
+    break;
+  case 'perform_cleared':
+    if(gScene == 'select_section' || gScene == 'select_section') gLyrPerform.Hide();
+    break;
+  case 'perform_guide':
+    if(gScene == 'select_section') gLyrPerform.Hide();
+    break;
+  case 'preferences':
+    gLyrPreferences.Hide();
+    break;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[������ ����
+----------------------------------------------------------------------------------------*/
+function PerformScene(scene){
+  switch(scene){
+  case 'select_section':
+    SceneSelectSection();
+    break;
+  case 'perform':
+    ScenePerform();
+    break;
+  case 'perform_falling':
+    ScenePerformFalling();
+    break;
+  case 'perform_failed':
+    ScenePerformFailed();
+    break;
+  case 'perform_guide':
+    ScenePerformGuideMode();
+    break;
+  case 'perform_cleared':
+    ScenePerformCleared();
+    break;
+  case 'preferences':
+    ScenePreferences();
+    break;
+  default:
+    gScene = 'select_section';
+    break;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� ��菀�� ����
+----------------------------------------------------------------------------------------*/
+function PrepareProblem(){
 
-        <input type="button" value="9  「IILO Form」 10Q" onClick="gButton='section9'">
-        <img src="img/clear.png" class="clear" id="clear8"><br>
+  var curProblemId = gCurProgmeIdList[gCurProblemId];
+  gCurProblem = gProblems[curProblemId];
 
-        <input type="button" value="10 「Starting I Mino 3rd Row」 3 Patterns [With Guide]" onClick="gButton='section10'">
-        <img src="img/clear.png" class="clear" id="clear9"><br>
+  // �m���}�z����f�B�[�v�R�s�[
+  gCurProblemReq = [];
+  for(var i = 0; i < gCurProblem.req.length; i++){
+    gCurProblemReq.push(gCurProblem.req[i]);
+  }
 
-        <input type="button" value="11 「Starting I Mino 3rd Row」 20Q" onClick="gButton='section11'">
-        <img src="img/clear.png" class="clear" id="clear10"><br>
+  // ���\��
+  DisplayCaption();
+  RefreshHint();
+  // �}�g���b�N�X����
+  for(var i = 0; i < DEADLINE_HEIGHT; i++){
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      gMatrix[i][j] = 0;
+    }
+  }
+  for(var i = DEADLINE_HEIGHT; i < MATRIX_HEIGHT; i++){
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      gMatrix[i][j] = gCurProblem.initialBlocks[i - DEADLINE_HEIGHT][j];
+    }
+  }
+  // �l�N�X�g����
+  gQueue = [];
+  gGuidesQueue = [];
+  gCurHold = gCurProblem.ingredients[0][0];
+  for(var i = 1; i < gCurProblem.ingredients.length; i++){
+    gQueue.push(gCurProblem.ingredients[i]);
+  }
+  for(var i = 0; i < gCurProblem.guides.length; i++){
+    gGuidesQueue.push(gCurProblem.guides[i]);
+  }
+  // �e��t���O������
+  gLineClearCount = -1;
+  gTSpinType = 0;
+  gRens = -1;
+  gIsReadyToB2b = false;
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���^�C�g���\�� ����
+----------------------------------------------------------------------------------------*/
+function DisplayCaption(){
+  var curProblemId = gCurProgmeIdList[gCurProblemId];
+//  var caption = " " + String(Number(gCurProblemId) + 1) + "/" + gCurProgmeIdList.length + "  ";
+  var caption = SectionTitle(gCurSectionId) + "      " +((gCurProblemId) + 1) + "/" + gCurProgmeIdList.length + "     ";
+  caption += gCurProblem.caption;
+  Say("perform_caption", caption);
+}
+/*----------------------------------------------------------------------------------------
+ ���� �l�N�X�g�𑗂� ����
 
-      </p>
+ �l�N�X�g�����݂�������Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function Dequeue(){
+  if(gQueue.length == 0 && !gCurHold) return false;
 
-      <p>
-        I Mino Horizontal Placements Summary<br>
-        <input type="button" value="12  Midterm Exam 20Q" onClick="gButton='section12'">
-        <img src="img/clear.png" class="clear" id="clear11"><br>
-      </p>
+  if(gQueue.length > 0){
+    gCurMino = gQueue.shift();
+  }else{
+    gCurMino = gCurHold;
+    gCurHold = null;
+  }
+  gCurGuide = gGuidesQueue.shift();
+  gCurDir = INITIAL_DIR;
+  gCurX = INITIAL_X;
+  gCurY = INITIAL_Y;
 
-      <p>
-        If you've made it to here, you've learned 710 out of the 711 possible Perfect Clear Openers.<br>
-        For those of you with energy to spare, please learn the final 「LSIO Form」.<br>
-      </p>
+  gNdCount = NATURAL_DROP_SPAN;
+  RefreshHint();
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �q���g�\���𔽉f ����
+----------------------------------------------------------------------------------------*/
+function RefreshHint(){
+  var hint = gCurProblem.hint;
+  if(gCurGuide && (gCurProblem.useGuide || gCurUseGuideFlg)){
+    hint += '\n(Please Follow The Guide Placements)';
+  }
+  Say('perform_hint', hint);
+}
+/*----------------------------------------------------------------------------------------
+ ���� �Z�N�V�������̋L�� ����
+----------------------------------------------------------------------------------------*/
+function RefreshSectionTitle(){
+  Say('section_title', SectionTitle(gCurSectionId));
+}
+/*----------------------------------------------------------------------------------------
+ ���� �N���A�󋵂��{�^���ɔ��f ����
+----------------------------------------------------------------------------------------*/
+function RefreshProblemButtons(){
+  for(var i = 0; i < SECTION_NUM; i++){
+    if(gProblemsCleared[i])  ShowImage('clear'+ i);
 
-      <p>
-        LSIO Form 84.6%<br>
-        <input type="button" value="13 「LSIO Form」 Total 1 Pattern [With Guide]" onClick="gButton='section13'">
-        <img src="img/clear.png" class="clear" id="clear12"><br>
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: �Z�N�V�����I�� ����
+----------------------------------------------------------------------------------------*/
+function SceneSelectSection(){
+  switch(gButton){
+  case 'preferences':
+    gScene = 'preferences';
+    return;
+  }
+  if(gButton.match(/^section[0-9]+$/)){
+    gCurSectionId = parseInt(gButton.substring(7)) - 1;
+    gCurProblemId = 0;
 
-        <input type="button" value="14 「LSIO Form」 12Q" onClick="gButton='section14'">
-        <img src="img/clear.png" class="clear" id="clear13"><br>
+    switch(gButton){
+    case 'section1':  /* �e���v����g��ł݂悤 */
+      gCurProgmeIdList = getProblemIdList(WARMING_UP);
+      break;
+    case 'section2':  /* I �c�u�� �i�K�C�h����j*/
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_VERTICAL);
+      break;
+    case 'section3':  /* I �c�u�� �����_�� 30�� */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840_VERTICAL))).slice(0,20);
+      break;
+    case 'section4':  /* ���� I �~�m�P�i�ځi�K�C�h����j */
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_HORIZONTAL_1);
+      break;
+    case 'section5':  /* ���� I �~�m�P�i�� */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840_HORIZONTAL_1))).slice(0,20);
+      break;
+    case 'section6':  /* �S���Q�����i�K�C�h����j */
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_HORIZONTAL_LAYDOWN);
+      break;
+    case 'section7':  /* �S���Q���� */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840_HORIZONTAL_LAYDOWN))).slice(0,20);
+      break;
+    case 'section8':  /* I I L O�i�K�C�h����j */
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_HORIZONTAL_IILO);
+      break;
+    case 'section9':  /* I I L O */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840_HORIZONTAL_IILO))).slice(0,10);
+      break;
+    case 'section10':  /* ���� I �~�m3�i�ځi�K�C�h����j */
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_HORIZONTAL_3);
+      break;
+    case 'section11':  /* ���� I �~�m3�i�� */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840_HORIZONTAL_3))).slice(0,20);
+      break;
+    case 'section12':  /* ���ԃe�X�g 20�� */
+      var array1 = shuffle(getProblemIdList(PROB840_HORIZONTAL_1));
+      var array2 = shuffle(getProblemIdList(PROB840_HORIZONTAL_LAYDOWN));
+      var array3 = shuffle(getProblemIdList(PROB840_HORIZONTAL_IILO));
+      var array4 = shuffle(getProblemIdList(PROB840_HORIZONTAL_3));
+      gCurProgmeIdList = (shuffle(((array1.concat(array2)).concat(array3)).concat(array4))).slice(0,20);
+      break;
+    case 'section13':  /* LSIO (�K�C�h����)*/
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_LSIO);
+      break;
+    case 'section14':  /* LSIO  */
+      gCurProgmeIdList = shuffle(getProblemIdList(PROB840_LSIO));
+      break;
+    case 'section15':  /* �����e�X�g 30�� */
+      gCurProgmeIdList = (shuffle(getProblemIdList(PROB840))).slice(0,30);
+      break;
+    case 'section16':  /* ���ƃe�X�g */
+      var array1 = (shuffle(getProblemIdList(PROB840))).slice(0,50);
+      var array2 = (shuffle(getProblemIdList(PROB840_MIRROR))).slice(0,50);
+      gCurProgmeIdList = shuffle(array1.concat(array2));
+      break;
+    case 'section17':  /* ���̂ق��̏����� */
+      gCurProgmeIdList = getProblemIdList(GUIDANCE_OTHER_WISE);
+      break;
+    case 'section18':  /* I �c�u�� �����_�� 514�� */
+      gCurProgmeIdList = shuffle(getProblemIdList(PROB840_VERTICAL));
+      break;
+    case 'section19':  /* I ���u�� �����_�� 196�� */
+      var array1 = shuffle(getProblemIdList(PROB840_HORIZONTAL_1));
+      var array2 = shuffle(getProblemIdList(PROB840_HORIZONTAL_LAYDOWN));
+      var array3 = shuffle(getProblemIdList(PROB840_HORIZONTAL_IILO));
+      var array4 = shuffle(getProblemIdList(PROB840_HORIZONTAL_3));
+      gCurProgmeIdList = shuffle(((array1.concat(array2)).concat(array3)).concat(array4));
+      break;
+    case 'section20':  /* �S711�� */
+      gCurProgmeIdList = shuffle(getProblemIdList(PROB840));
+      break;
+    case 'section21':  /* �S��~���[ */
+      gCurProgmeIdList = shuffle(getProblemIdList(PROB840_MIRROR));
+      break;
+    default:
+      gCurProgmeIdList = [];/* �����ɓ���ƁA��ʂ����F�ɂȂ��ė�����悤�Ɍ�����͂� */
+      break;
+    }
 
-      </p>
+    gScene = 'perform';
+  }
+}
 
-      <p>
-        Conclusion<br>
-        <input type="button" value="15 Final Exam 30Q" onClick="gButton='section15'">
-        <img src="img/clear.png" class="clear" id="clear14"><br>
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: ���b�X���J�n ����
+----------------------------------------------------------------------------------------*/
+function ScenePerform(){
+  switch(gButton){
+  case 'back':
+    gScene = 'select_section';
+    return;
+  }
+  if(IsPressed()) gScene = 'perform_falling';
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: ���b�X���� ����
+----------------------------------------------------------------------------------------*/
+function ScenePerformFalling(){
+  switch(gButton){
+  case 'back':
+    gScene = 'select_section';
+    return;
+  }
+  // �Z���\����
+  if(gDfCount > 0){
+    gDfCount--;
+    // �J�E���g�I���ŕ\����߂�
+    if(gDfCount == 0) DisplayCaption();
+  }
+  // ���C��������
+  if(gLineClearCount > 0){
+    gLineClearCount--;
+    if(gLineClearCount == 0){
+      var caption = (gCurSectionId + 1) + "-" + (gCurProblemId + 1) + " ";
+      caption += gCurProblem.caption;
+      RemoveReservedLines()
+    }
+    // ���̑���֎~
+    return;
+  }
+  // �~�m�𑀍쒆�łȂ��ꍇ
+  if(!gCurMino){
+    // �N���A�m�F
+    if(ReqIsCleared()) gScene = 'perform_cleared';
+    // �l�N�X�g�𑗂�B�l�N�X�g���Ȃ���Ύ��s
+    else if(!Dequeue()){
+      gCurMino = null;
+      gScene = 'perform_failed';
+    }
+    // ���b�N�A�E�g����
+    if(AppearsToLockout()){
+      Lockout();
+      return;
+    }
+  // �~�m�𑀍쒆�̏ꍇ
+  }else{
+    // �L�[���͂ŕ���
+    if(InputsHorizontalMove(true)){
+      if(PlaceTest(gCurDir, gCurMino, gCurX + 1, gCurY)){
+        gCurX++;
+        gTSpinType = 0;
+        if(IsLanding()) gNdCount = NATURAL_DROP_SPAN;
+      }
+    }else if(InputsHorizontalMove(false)){
+      if(PlaceTest(gCurDir, gCurMino, gCurX - 1, gCurY)){
+        gCurX--;
+        gTSpinType = 0;
+        if(IsLanding()) gNdCount = NATURAL_DROP_SPAN;
+      }
+    }
+    if(InputsSoftDrop()) SoftDrop();
+    if(IsPressed(KeyRR())) RotateRight();
+    if(IsPressed(KeyRL())) RotateLeft();
+    if(IsPressed(KeyG()) && !(gCurProblem.useGuide || gCurUseGuideFlg)) {
+      gScene = 'perform_guide';
+    }
+    if(IsPressed(KeyH())) Hold();
+    if(IsPressed(KeyHD())) HardDrop();  // �n�[�h�h���b�v���͍͂Ō�ɔ��肷�邱��
+    // ����/���n����
+    if(--gNdCount <= 0){
+      gNdCount = NATURAL_DROP_SPAN;
+      if(!IsLanding()){
+        gCurY++;
+        gTSpinType = 0;
+        gLandingCount = NATURAL_DROP_SPAN;
+      }else{
+        // �K�C�h�z��_���v
+        if(DUMP_GUIDE_DATA){
+          console.log("G(%s, %d, %d, %d)", gCurMino, gCurDir, gCurX, gCurY-3);
+        }
+        // ���n
+        Land();
+      }
+    }
+  }
 
-        <input type="button" value="16 Graduation Exam (Mirrored Questions Included) 100Q" onClick="gButton='section16'">
-        <img src="img/clear.png" class="clear" id="clear15"><br>
+  Refresh();
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���ړ���^����? ����
 
-      </p>
-      <p>
-        Bonus<br>
-        <input type="button" value="17 Other Clear Methods" onClick="gButton='section17'">
-        <img src="img/clear.png" class="clear" id="clear16"><br>
+ ���ړ��L�[���������ςȂ��ɂ����Ƃ��A���ړ���^����u�Ԃ��𔻒f���ĕԂ��܂��B�����n�߂��u
+ �Ԃ�K��̃��s�[�g�Ԋu�� true ��Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function InputsHorizontalMove(toRight){
+  keyName = toRight ? KeyR() : KeyL();
+  if(PressedDuration(keyName) < HORIZONTAL_CHARGE_DURATION) return IsPressed(keyName);
+  return (PressedDuration(keyName) - HORIZONTAL_CHARGE_DURATION) % HORIZONTAL_REPEAT_SPAN == 0;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �\�t�g�h���b�v���s? ����
 
-        <input type="button" value="18 「I Mino Vertical Placements」 Total 514Q" onClick="gButton='section18'">
-        <img src="img/clear.png" class="clear" id="clear17"><br>
+ �������u�ԂƁA�ȍ~�\�t�g�h���b�v�Ԋu���o�߂���x�� true ��Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function InputsSoftDrop(){
+  if(IsPressed(KeySD())) return true;
+  if(!IsHolded(KeySD())) return false;
+  return PressedDuration(KeySD()) % SOFT_DROP_SPAN == 0;
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���������C��������Ώ����\�񂷂� ����
 
-        <input type="button" value="19 「I Mino Horizontal Placements」 Total 196Q" onClick="gButton='section19'">
-        <img src="img/clear.png" class="clear" id="clear18"><br>
+ �B�������Z ID ��z��ɂ��ĕԂ��܂��B
+----------------------------------------------------------------------------------------*/
+function EraseLine(){
+  // ���������C���̌���
+  var eraseLines = [];
+  var lineErases;
+  for(var i = 0; i < MATRIX_HEIGHT; i++){
+    lineErases = true;
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      if(gBlocks[gMatrix[i][j]].passable){
+        lineErases = false;
+        break;
+      }
+    }
+    if(lineErases){
+      eraseLines.push(i);
+      // ���C���폜�\��
+      ReserveCutLine(i);
+    }
+  }
+  var numEls = eraseLines.length;
+  // REN ���Ǘ�
+  if(numEls == 0) gRens = -1;
+  else gRens++;
+  // �B�������Z ID �̔z����쐬
+  var features = [];
+  switch(numEls){
+  case 0:
+    if(gTSpinType > 0) features.push(gTSpinType == 1 ? 4 : 5);
+    break;
+  case 1: features.push([0, 6, 7][gTSpinType]); break;
+  case 2: features.push(gTSpinType == 0 ? 1 : 8); break;
+  case 3: features.push(gTSpinType == 0 ? 2 : 9); break;
+  case 4: features.push(3); break;
+  }
+  if(numEls >= 1){
+    if(gRens >= 1) features.push(100 + gRens);
+    if(gIsReadyToB2b && (numEls >= 4 || gTSpinType > 0)) features.push(11);
+    if(IsEmptyMatrix()) features.push(10);
+  }
+  // B2B �t���O�Ǘ�
+  if(numEls >= 1) gIsReadyToB2b = (numEls >= 4 || (gTSpinType > 0 && numEls >= 1));
 
-        <input type="button" value="20 All 711Q" onClick="gButton='section20'">
-        <img src="img/clear.png" class="clear" id="clear19"><br>
+  return features;
+}
 
-        <input type="button" value="21 All 711Q Mirrored" onClick="gButton='section21'">
-        <img src="img/clear.png" class="clear" id="clear20"><br>
-      </p>
+/*----------------------------------------------------------------------------------------
+ ���� �}�g���b�N�X�͋�? ����
+----------------------------------------------------------------------------------------*/
+function IsEmptyMatrix(){
+  for(var i = 0; i < MATRIX_HEIGHT; i++){
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      if(!gBlocks[gMatrix[i][j]].passable) return false;
+    }
+  }
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���C�������\�� ����
 
-      <p>
-        ■Author<br>
-        <a href="https://form1ssl.fc2.com/form/?id=685fca71e208118a">chokotia</a><br>
-      </p>
-      <p>
-        ■Reference Sites<br>
-        <a href="http://taninkona.web.fc2.com/ttt/">TETRiS TRAiNER TRES-BiEN</a><br>
-        <a href="https://docs.google.com/spreadsheets/d/1bVY3t_X96xRmUL0qdgB9tViSIGenu6RMKX4RW7qWg8Y/edit#gid=376091749">Tetris Perfect Clear Success Rates</a><br>
-        <a href="http://waka.nu/tetris/">喜竹屋本舗</a><br>
-        <a href="http://harddrop.com/wiki/Main_Page">Hard Drop Wiki</a><br>
-        <a href="http://www46.atwiki.jp/tojkazuto/">Tetris Strategy and Tournament News Compilation</a><br>
-        <a href="http://www59.atwiki.jp/tetple/pages/1.html">Tetris Methods Collection</a><br>
-      </p>
-      <p>
-        ■Play Tetris for Free!<br>
-      <a href="http://www.tetrisfriends.com/">Tetris Friends</a><br>
-      <a href="http://www.nicovideo.jp/watch/sm16847148">How to start playing Tetris Friends!(NicoNico Douga)</a><br>
-      <a href="http://www.geocities.jp/teto_kozo/">テトフレ小僧 (『Tetris Friends』の始め方＆遊び方解説)</a><br>
-      </p>
-    </div>
-    <div id="list_problems" class="layer">
-      <p>
-        <input type="text" id="section_title" class="center" style="width: 560px;">
-      </p>
-      <p>
-        <input type="button" id="prob0" value="" onClick="gButton='problem1'"><br>
-        <input type="button" id="prob1" value="" onClick="gButton='problem2'"><br>
-      </p>
-      <p>
-        <input type="button" value="��BACK" onClick="gButton='previous'">�@
-        <input type="button" value="NEXT��" onClick="gButton='next'">
-      </p>
-      <p>
-        <input type="button" value="Return to Main Screen" onClick="gButton='back'">
-      </p>
-    </div>
+ <line>�s�ڂɂ���u���b�N���폜�\�񂵂܂��B������ RemoveReservedLines() �ō폜����܂��B
+----------------------------------------------------------------------------------------*/
+function ReserveCutLine(line){
+  for(var i = 0; i < MATRIX_WIDTH; i++){
+    gMatrix[line][i] = BlkVanishing().id;
+  }
+  gLineClearCount = LINE_CLEAR_DURATION;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �����\��ς̃��C������ ����
 
-    <div id="perform" class="layer center">
-      <p>
-        <input type="text" id="perform_caption" class="center" style="width: 680px;"><br>
-      </p>
-      <table>
+ �����\��ς̃u���b�N���������A�ł�����Ԃ��ォ��l�߂܂��B
+----------------------------------------------------------------------------------------*/
+function RemoveReservedLines(){
+  for(var i = 0; i < MATRIX_HEIGHT; i++){
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      if(gBlocks[gMatrix[i][j]].toVanish){
+        for(var k = i; k >= 1; k--){
+          gMatrix[k][j] = gMatrix[k - 1][j];
+        }
+        gMatrix[0][j] = 0;
+      }
+    }
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �Z���擾 ����
 
-        <td style="padding-right: 16px">
-          <p class="small">
-            HOLD
-          </p>
-          <p>
-            <img src="img/b0.png" id="h0_0" width="12" height="12"><img src="img/b0.png" id="h0_1" width="12" height="12"
-            ><img src="img/b0.png" id="h0_2" width="12" height="12"><img src="img/b0.png" id="h0_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="h1_0" width="12" height="12"><img src="img/b0.png" id="h1_1" width="12" height="12"
-            ><img src="img/b0.png" id="h1_2" width="12" height="12"><img src="img/b0.png" id="h1_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="h2_0" width="12" height="12"><img src="img/b0.png" id="h2_1" width="12" height="12"
-            ><img src="img/b0.png" id="h2_2" width="12" height="12"><img src="img/b0.png" id="h2_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="h3_0" width="12" height="12"><img src="img/b0.png" id="h3_1" width="12" height="12"
-            ><img src="img/b0.png" id="h3_2" width="12" height="12"><img src="img/b0.png" id="h3_3" width="12" height="12"><br>
-          </p>
-        </td>
+ �����̋Z��B�������ꍇ�A�܂Ƃ߂� 1 �̕�����ɂ��ĕԂ��܂��B
+----------------------------------------------------------------------------------------*/
+function FeatureName(features){
+  var result = "☆ ";
+  for(var i = 0; i < features.length; i++){
+    if(i > 0) result += " ";
+    switch(features[i]){
+    case  0: result += "SINGLE"; break;
+    case  1: result += "DOUBLE"; break;
+    case  2: result += "TRIPLE"; break;
+    case  3: result += "TETRiS"; break;
+    case  4: result += "T-SPIN MINI"; break;
+    case  5: result += "T-SPIN"; break;
+    case  6: result += "T-SPIN SINGLE MINI"; break;
+    case  7: result += "T-SPIN SINGLE"; break;
+    case  8: result += "T-SPIN DOUBLE"; break;
+    case  9: result += "T-SPIN TRIPLE"; break;
+    case 10: result += "PERFECT CLEAR"; break;
+    case 11: result += "BACK to BACK"; break;
+    default: result += (features[i] - 100) + " REN"; break;  // 100 + n: n REN
+    }
+  }
+  result += " ☆";
+  return result;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �ڒn��? ����
+----------------------------------------------------------------------------------------*/
+function IsLanding(){
+  return !PlaceTest(gCurDir, gCurMino, gCurX, gCurY + 1);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���n ����
+----------------------------------------------------------------------------------------*/
+function Land(){
+  // �t�B�[���h�ɔ��f
+  for(var i = 0; i < 4; i++){
+    for(var j = 0; j < 4; j++){
+      if(IsValidPos(j + gCurX, i + gCurY)){
+        if(gCurMino.shape[gCurDir][i][j] == 1){
+          gMatrix[i + gCurY][j + gCurX] = gCurMino.placedBlockId;
+        }
+      }
+    }
+  }
+  // �����ȃK�C�h�Ȃ�]��Ȃ��Ǝ��s��
+  if(gCurGuide){
+    if((gCurProblem.useGuide || gCurUseGuideFlg) && GuideBlocksPos().join() != CurMinoBlocksPos().join()){
+      gScene = 'perform_failed';
+      gCurMino = null;
+      return;
+    }
+  }
+  // ���b�N�A�E�g����
+  if(LandsToLockout()){
+    Lockout();
+    return;
+  }
+  // �Z���������Ă���Ε\������я���
+  var features = EraseLine();
+  if(features.length > 0){
+    // �\���Ǘ�
+    Say('perform_caption', FeatureName(features));
+    gDfCount = DISPLAY_FEATURES_DURATION;
+    // �m���}�֔��f
+    RemoveReq(features);
+    // ���C���������Ă���΃��C������
+    if(IsErased(features)) gLineClearCount = LINE_CLEAR_DURATION;
+  }
+  // �A�N�e�B�u�~�m����
+  gCurMino = null;
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���n�������ʁA���b�N�A�E�g? ����
 
-        <td>
-          <img src="img/b0.png" id="m0_0"><img src="img/b0.png" id="m0_1"><img src="img/b0.png" id="m0_2"
-          ><img src="img/b0.png" id="m0_3"><img src="img/b0.png" id="m0_4"><img src="img/b0.png" id="m0_5"
-          ><img src="img/b0.png" id="m0_6"><img src="img/b0.png" id="m0_7"><img src="img/b0.png" id="m0_8"
-          ><img src="img/b0.png" id="m0_9"><br>
-          <img src="img/b0.png" id="m1_0"><img src="img/b0.png" id="m1_1"><img src="img/b0.png" id="m1_2"
-          ><img src="img/b0.png" id="m1_3"><img src="img/b0.png" id="m1_4"><img src="img/b0.png" id="m1_5"
-          ><img src="img/b0.png" id="m1_6"><img src="img/b0.png" id="m1_7"><img src="img/b0.png" id="m1_8"
-          ><img src="img/b0.png" id="m1_9"><br>
-          <img src="img/b0.png" id="m2_0"><img src="img/b0.png" id="m2_1"><img src="img/b0.png" id="m2_2"
-          ><img src="img/b0.png" id="m2_3"><img src="img/b0.png" id="m2_4"><img src="img/b0.png" id="m2_5"
-          ><img src="img/b0.png" id="m2_6"><img src="img/b0.png" id="m2_7"><img src="img/b0.png" id="m2_8"
-          ><img src="img/b0.png" id="m2_9"><br>
-          <img src="img/b0.png" id="m3_0"><img src="img/b0.png" id="m3_1"><img src="img/b0.png" id="m3_2"
-          ><img src="img/b0.png" id="m3_3"><img src="img/b0.png" id="m3_4"><img src="img/b0.png" id="m3_5"
-          ><img src="img/b0.png" id="m3_6"><img src="img/b0.png" id="m3_7"><img src="img/b0.png" id="m3_8"
-          ><img src="img/b0.png" id="m3_9"><br>
-          <img src="img/b0.png" id="m4_0"><img src="img/b0.png" id="m4_1"><img src="img/b0.png" id="m4_2"
-          ><img src="img/b0.png" id="m4_3"><img src="img/b0.png" id="m4_4"><img src="img/b0.png" id="m4_5"
-          ><img src="img/b0.png" id="m4_6"><img src="img/b0.png" id="m4_7"><img src="img/b0.png" id="m4_8"
-          ><img src="img/b0.png" id="m4_9"><br>
-          <img src="img/b0.png" id="m5_0"><img src="img/b0.png" id="m5_1"><img src="img/b0.png" id="m5_2"
-          ><img src="img/b0.png" id="m5_3"><img src="img/b0.png" id="m5_4"><img src="img/b0.png" id="m5_5"
-          ><img src="img/b0.png" id="m5_6"><img src="img/b0.png" id="m5_7"><img src="img/b0.png" id="m5_8"
-          ><img src="img/b0.png" id="m5_9"><br>
-          <img src="img/b0.png" id="m6_0"><img src="img/b0.png" id="m6_1"><img src="img/b0.png" id="m6_2"
-          ><img src="img/b0.png" id="m6_3"><img src="img/b0.png" id="m6_4"><img src="img/b0.png" id="m6_5"
-          ><img src="img/b0.png" id="m6_6"><img src="img/b0.png" id="m6_7"><img src="img/b0.png" id="m6_8"
-          ><img src="img/b0.png" id="m6_9"><br>
-          <img src="img/b0.png" id="m7_0"><img src="img/b0.png" id="m7_1"><img src="img/b0.png" id="m7_2"
-          ><img src="img/b0.png" id="m7_3"><img src="img/b0.png" id="m7_4"><img src="img/b0.png" id="m7_5"
-          ><img src="img/b0.png" id="m7_6"><img src="img/b0.png" id="m7_7"><img src="img/b0.png" id="m7_8"
-          ><img src="img/b0.png" id="m7_9"><br>
-          <img src="img/b0.png" id="m8_0"><img src="img/b0.png" id="m8_1"><img src="img/b0.png" id="m8_2"
-          ><img src="img/b0.png" id="m8_3"><img src="img/b0.png" id="m8_4"><img src="img/b0.png" id="m8_5"
-          ><img src="img/b0.png" id="m8_6"><img src="img/b0.png" id="m8_7"><img src="img/b0.png" id="m8_8"
-          ><img src="img/b0.png" id="m8_9"><br>
-          <img src="img/b0.png" id="m9_0"><img src="img/b0.png" id="m9_1"><img src="img/b0.png" id="m9_2"
-          ><img src="img/b0.png" id="m9_3"><img src="img/b0.png" id="m9_4"><img src="img/b0.png" id="m9_5"
-          ><img src="img/b0.png" id="m9_6"><img src="img/b0.png" id="m9_7"><img src="img/b0.png" id="m9_8"
-          ><img src="img/b0.png" id="m9_9"><br>
-          <img src="img/b0.png" id="m10_0"><img src="img/b0.png" id="m10_1"><img src="img/b0.png" id="m10_2"
-          ><img src="img/b0.png" id="m10_3"><img src="img/b0.png" id="m10_4"><img src="img/b0.png" id="m10_5"
-          ><img src="img/b0.png" id="m10_6"><img src="img/b0.png" id="m10_7"><img src="img/b0.png" id="m10_8"
-          ><img src="img/b0.png" id="m10_9"><br>
-          <img src="img/b0.png" id="m11_0"><img src="img/b0.png" id="m11_1"><img src="img/b0.png" id="m11_2"
-          ><img src="img/b0.png" id="m11_3"><img src="img/b0.png" id="m11_4"><img src="img/b0.png" id="m11_5"
-          ><img src="img/b0.png" id="m11_6"><img src="img/b0.png" id="m11_7"><img src="img/b0.png" id="m11_8"
-          ><img src="img/b0.png" id="m11_9"><br>
-          <img src="img/b0.png" id="m12_0"><img src="img/b0.png" id="m12_1"><img src="img/b0.png" id="m12_2"
-          ><img src="img/b0.png" id="m12_3"><img src="img/b0.png" id="m12_4"><img src="img/b0.png" id="m12_5"
-          ><img src="img/b0.png" id="m12_6"><img src="img/b0.png" id="m12_7"><img src="img/b0.png" id="m12_8"
-          ><img src="img/b0.png" id="m12_9"><br>
-          <img src="img/b0.png" id="m13_0"><img src="img/b0.png" id="m13_1"><img src="img/b0.png" id="m13_2"
-          ><img src="img/b0.png" id="m13_3"><img src="img/b0.png" id="m13_4"><img src="img/b0.png" id="m13_5"
-          ><img src="img/b0.png" id="m13_6"><img src="img/b0.png" id="m13_7"><img src="img/b0.png" id="m13_8"
-          ><img src="img/b0.png" id="m13_9"><br>
-          <img src="img/b0.png" id="m14_0"><img src="img/b0.png" id="m14_1"><img src="img/b0.png" id="m14_2"
-          ><img src="img/b0.png" id="m14_3"><img src="img/b0.png" id="m14_4"><img src="img/b0.png" id="m14_5"
-          ><img src="img/b0.png" id="m14_6"><img src="img/b0.png" id="m14_7"><img src="img/b0.png" id="m14_8"
-          ><img src="img/b0.png" id="m14_9"><br>
-          <img src="img/b0.png" id="m15_0"><img src="img/b0.png" id="m15_1"><img src="img/b0.png" id="m15_2"
-          ><img src="img/b0.png" id="m15_3"><img src="img/b0.png" id="m15_4"><img src="img/b0.png" id="m15_5"
-          ><img src="img/b0.png" id="m15_6"><img src="img/b0.png" id="m15_7"><img src="img/b0.png" id="m15_8"
-          ><img src="img/b0.png" id="m15_9"><br>
-          <img src="img/b0.png" id="m16_0"><img src="img/b0.png" id="m16_1"><img src="img/b0.png" id="m16_2"
-          ><img src="img/b0.png" id="m16_3"><img src="img/b0.png" id="m16_4"><img src="img/b0.png" id="m16_5"
-          ><img src="img/b0.png" id="m16_6"><img src="img/b0.png" id="m16_7"><img src="img/b0.png" id="m16_8"
-          ><img src="img/b0.png" id="m16_9"><br>
-          <img src="img/b0.png" id="m17_0"><img src="img/b0.png" id="m17_1"><img src="img/b0.png" id="m17_2"
-          ><img src="img/b0.png" id="m17_3"><img src="img/b0.png" id="m17_4"><img src="img/b0.png" id="m17_5"
-          ><img src="img/b0.png" id="m17_6"><img src="img/b0.png" id="m17_7"><img src="img/b0.png" id="m17_8"
-          ><img src="img/b0.png" id="m17_9"><br>
-          <img src="img/b0.png" id="m18_0"><img src="img/b0.png" id="m18_1"><img src="img/b0.png" id="m18_2"
-          ><img src="img/b0.png" id="m18_3"><img src="img/b0.png" id="m18_4"><img src="img/b0.png" id="m18_5"
-          ><img src="img/b0.png" id="m18_6"><img src="img/b0.png" id="m18_7"><img src="img/b0.png" id="m18_8"
-          ><img src="img/b0.png" id="m18_9"><br>
-          <img src="img/b0.png" id="m19_0"><img src="img/b0.png" id="m19_1"><img src="img/b0.png" id="m19_2"
-          ><img src="img/b0.png" id="m19_3"><img src="img/b0.png" id="m19_4"><img src="img/b0.png" id="m19_5"
-          ><img src="img/b0.png" id="m19_6"><img src="img/b0.png" id="m19_7"><img src="img/b0.png" id="m19_8"
-          ><img src="img/b0.png" id="m19_9"><br>
-        </td>
-        <td style="padding-left: 16px">
-          <p>
-            <input type="button" value="Return to Questions" onClick="gButton='back'" style="width: 200px; height: 30px;"><br>
-            <textarea type="text" id="perform_hint" style="width: 280px; height: 96px;"></textarea>
-          </p>
-          <p class="small">
-            NEXT
-          </p>
-          <p>
-            <img src="img/b0.png" id="n0_0_0" width="12" height="12"><img src="img/b0.png" id="n0_0_1" width="12" height="12"
-            ><img src="img/b0.png" id="n0_0_2" width="12" height="12"><img src="img/b0.png" id="n0_0_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n0_1_0" width="12" height="12"><img src="img/b0.png" id="n0_1_1" width="12" height="12"
-            ><img src="img/b0.png" id="n0_1_2" width="12" height="12"><img src="img/b0.png" id="n0_1_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n0_2_0" width="12" height="12"><img src="img/b0.png" id="n0_2_1" width="12" height="12"
-            ><img src="img/b0.png" id="n0_2_2" width="12" height="12"><img src="img/b0.png" id="n0_2_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n0_3_0" width="12" height="12"><img src="img/b0.png" id="n0_3_1" width="12" height="12"
-            ><img src="img/b0.png" id="n0_3_2" width="12" height="12"><img src="img/b0.png" id="n0_3_3" width="12" height="12"><br>
-          </p>
-          <p>
-            <img src="img/b0.png" id="n1_0_0" width="12" height="12"><img src="img/b0.png" id="n1_0_1" width="12" height="12"
-            ><img src="img/b0.png" id="n1_0_2" width="12" height="12"><img src="img/b0.png" id="n1_0_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n1_1_0" width="12" height="12"><img src="img/b0.png" id="n1_1_1" width="12" height="12"
-            ><img src="img/b0.png" id="n1_1_2" width="12" height="12"><img src="img/b0.png" id="n1_1_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n1_2_0" width="12" height="12"><img src="img/b0.png" id="n1_2_1" width="12" height="12"
-            ><img src="img/b0.png" id="n1_2_2" width="12" height="12"><img src="img/b0.png" id="n1_2_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n1_3_0" width="12" height="12"><img src="img/b0.png" id="n1_3_1" width="12" height="12"
-            ><img src="img/b0.png" id="n1_3_2" width="12" height="12"><img src="img/b0.png" id="n1_3_3" width="12" height="12"><br>
-          </p>
-          <p>
-            <img src="img/b0.png" id="n2_0_0" width="12" height="12"><img src="img/b0.png" id="n2_0_1" width="12" height="12"
-            ><img src="img/b0.png" id="n2_0_2" width="12" height="12"><img src="img/b0.png" id="n2_0_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n2_1_0" width="12" height="12"><img src="img/b0.png" id="n2_1_1" width="12" height="12"
-            ><img src="img/b0.png" id="n2_1_2" width="12" height="12"><img src="img/b0.png" id="n2_1_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n2_2_0" width="12" height="12"><img src="img/b0.png" id="n2_2_1" width="12" height="12"
-            ><img src="img/b0.png" id="n2_2_2" width="12" height="12"><img src="img/b0.png" id="n2_2_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n2_3_0" width="12" height="12"><img src="img/b0.png" id="n2_3_1" width="12" height="12"
-            ><img src="img/b0.png" id="n2_3_2" width="12" height="12"><img src="img/b0.png" id="n2_3_3" width="12" height="12"><br>
-          </p>
-          <p>
-            <img src="img/b0.png" id="n3_0_0" width="12" height="12"><img src="img/b0.png" id="n3_0_1" width="12" height="12"
-            ><img src="img/b0.png" id="n3_0_2" width="12" height="12"><img src="img/b0.png" id="n3_0_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n3_1_0" width="12" height="12"><img src="img/b0.png" id="n3_1_1" width="12" height="12"
-            ><img src="img/b0.png" id="n3_1_2" width="12" height="12"><img src="img/b0.png" id="n3_1_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n3_2_0" width="12" height="12"><img src="img/b0.png" id="n3_2_1" width="12" height="12"
-            ><img src="img/b0.png" id="n3_2_2" width="12" height="12"><img src="img/b0.png" id="n3_2_3" width="12" height="12"><br>
-            <img src="img/b0.png" id="n3_3_0" width="12" height="12"><img src="img/b0.png" id="n3_3_1" width="12" height="12"
-            ><img src="img/b0.png" id="n3_3_2" width="12" height="12"><img src="img/b0.png" id="n3_3_3" width="12" height="12"><br>
-          </p>
-          <p>
-            <p>
-              <img src="img/b0.png" id="n4_0_0" width="12" height="12"><img src="img/b0.png" id="n4_0_1" width="12" height="12"
-              ><img src="img/b0.png" id="n4_0_2" width="12" height="12"><img src="img/b0.png" id="n4_0_3" width="12" height="12"><br>
-              <img src="img/b0.png" id="n4_1_0" width="12" height="12"><img src="img/b0.png" id="n4_1_1" width="12" height="12"
-              ><img src="img/b0.png" id="n4_1_2" width="12" height="12"><img src="img/b0.png" id="n4_1_3" width="12" height="12"><br>
-              <img src="img/b0.png" id="n4_2_0" width="12" height="12"><img src="img/b0.png" id="n4_2_1" width="12" height="12"
-              ><img src="img/b0.png" id="n4_2_2" width="12" height="12"><img src="img/b0.png" id="n4_2_3" width="12" height="12"><br>
-              <img src="img/b0.png" id="n4_3_0" width="12" height="12"><img src="img/b0.png" id="n4_3_1" width="12" height="12"
-              ><img src="img/b0.png" id="n4_3_2" width="12" height="12"><img src="img/b0.png" id="n4_3_3" width="12" height="12"><br>
-            </p>
-          </td>
+ �~�m�̑S�u���b�N���f�b�h���C������ɂȂ����ꍇ�� true ��Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function LandsToLockout(){
+  var minoPos = MinoToBlockPositions(gCurDir, gCurMino, gCurX, gCurY);
+  for(var i = 0; i < minoPos.length; i++){
+    if(minoPos[i][1] >= DEADLINE_HEIGHT) return false;
+  }
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �~�m���o���������ʁA���b�N�A�E�g? ����
 
-          <td style="width: 10%"></td>
-        </table>
-      </div>
+ �~�m�̃u���b�N�Ɗ����̃u���b�N�̈ʒu�� 1 �ł��d�������� true ��Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function AppearsToLockout(){
+  if(!gCurMino) return;
+  return !PlaceTest(INITIAL_DIR, gCurMino, INITIAL_X, INITIAL_Y);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���b�N�A�E�g������ ����
+----------------------------------------------------------------------------------------*/
+function Lockout(){
+  gScene = 'perform_failed';
+  gCurMino = null;
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���C����������? ����
+----------------------------------------------------------------------------------------*/
+function IsErased(features){
+  for(var i = 0; i < features.length; i++){
+    switch(features[i]){
+    case  0:
+    case  1:
+    case  2:
+    case  3:
+    case  6:
+    case  7:
+    case  8:
+    case  9:
+    case 10:
+    case 11:
+      return true;
+    }
+  }
+  return false;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �K�C�h�̃u���b�N��������W�̈ꗗ���擾 ����
+----------------------------------------------------------------------------------------*/
+function GuideBlocksPos(){
+  var g = gCurGuide;
+//  return MinoToBlockPositions(g.dir, gCurMino, g.x, g.y + DEADLINE_HEIGHT);
+  return MinoToBlockPositions(g.dir, g.mino, g.x, g.y + DEADLINE_HEIGHT);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ���쒆�̃~�m�̃u���b�N��������W�̈ꗗ���擾 ����
+----------------------------------------------------------------------------------------*/
+function CurMinoBlocksPos(){
+  return MinoToBlockPositions(gCurDir, gCurMino, gCurX, gCurY);
+}
+/*----------------------------------------------------------------------------------------
+ ���� �w��ʒu�Ƀ~�m��u�����Ƃ��̃u���b�N�̍��W�̈ꗗ���擾 ����
 
-      <div id="preferences" class="layer">
-        <p>
-          Move Left・・ <select id="key_left">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Move Right・・<select id="key_right">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Soft Drop・・ <select id="key_softdrop">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Hard Drop・・ <select id="key_harddrop">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Right Rotate・<select id="key_rot_right">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Left Rotate・ <select id="key_rot_left">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Hold・・・・・ <select id="key_hold">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-          Use Guide・・ <select id="key_guide">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option><option value="5">5</option>
-            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
-            <option value="9">9</option><option value="A">A</option><option value="B">B</option>
-            <option value="C">C</option><option value="D">D</option><option value="E">E</option>
-            <option value="F">F</option><option value="G">G</option><option value="H">H</option>
-            <option value="I">I</option><option value="J">J</option><option value="K">K</option>
-            <option value="L">L</option><option value="M">M</option><option value="N">N</option>
-            <option value="O">O</option><option value="P">P</option><option value="Q">Q</option>
-            <option value="R">R</option><option value="S">S</option><option value="T">T</option>
-            <option value="U">U</option><option value="V">V</option><option value="W">W</option>
-            <option value="X">X</option><option value="Y">Y</option><option value="Z">Z</option>
-            <option value="-">-</option><option value="^">^</option><option value="¥¥">¥</option>
-            <option value="@">@</option><option value="[">[</option><option value=";">;</option>
-            <option value=":">:</option><option value="]">]</option><option value=",">,</option>
-            <option value=".">.</option><option value="/">/</option><option value="+">+</option>
-            <option value="*">*</option><option value="Space">Space</option>
-            <option value="Enter">Enter</option><option value="Tab">Tab</option>
-            <option value="Shift">Shift</option><option value="Ctrl">Ctrl</option>
-            <option value="Alt">Alt</option><option value="Esc">Esc</option>
-            <option value="Backspace">Backspace</option><option value="Insert">Insert</option>
-            <option value="Delete">Delete</option><option value="F1">F1</option>
-            <option value="F2">F2</option><option value="F3">F3</option>
-            <option value="F4">F4</option><option value="F5">F5</option>
-            <option value="F6">F6</option><option value="F7">F7</option>
-            <option value="F8">F8</option><option value="F9">F9</option>
-            <option value="F10">F10</option><option value="F11">F11</option>
-            <option value="F12">F12</option><option value="Up">↑</option>
-            <option value="Left">←</option><option value="Right">→</option>
-            <option value="Down">↓</option>
-          </select><br>
-        </p>
-        <input type="button" value="OK" onClick="gButton='ok'">
-        <input type="button" value="Cancel" onClick="gButton='cancel'">
-      </div>
+ �傫�� 2 �̔z�� [ x ���W, y ���W] �̈ꗗ������ɔz��ɂ��ĕԂ��܂�(������ 2 �����z��)�B
+----------------------------------------------------------------------------------------*/
+function MinoToBlockPositions(dir, mino, x, y){
+  var result = [];
+  for(var i = 0; i < 4; i++){
+    for(var j = 0; j < 4; j++){
+      if(mino.shape[dir][i][j] == 1) result.push([x + j, y + i]);
+    }
+  }
+  return result;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �n�[�h�h���b�v������� Y ���ǂꂾ������( DIFFerence of Y )���邩���擾 ����
+----------------------------------------------------------------------------------------*/
+function HarddropDiffY(){
+  var i = 0;
+  while(PlaceTest(gCurDir, gCurMino, gCurX, gCurY + i)){
+    i++;
+  }
+  // �ʉߕs�\�ɂȂ钼�O�̓_�܂ł̑����ʂ�Ԃ�
+  return i - 1;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �n�[�h�h���b�v ����
+----------------------------------------------------------------------------------------*/
+function HardDrop(){
+  var dY = HarddropDiffY();
+  if(dY > 0) gTSpinType = 0;
+  gCurY += dY;
+  gNdCount = 0;
+  gLandingCount = 0;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �\�t�g�h���b�v ����
+----------------------------------------------------------------------------------------*/
+function SoftDrop(){
+  if(!IsLanding()){
+    gCurY++;
+    gTSpinType = 0;
+    gNdCount = NATURAL_DROP_SPAN;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �z�[���h ����
+----------------------------------------------------------------------------------------*/
+function Hold(){
+  if(gQueue.length == 0 && !gCurHold) return;
 
-    </form>
+  if(!gCurHold){
+    gCurHold = gCurMino;
+    gCurMino = gQueue.shift();
+  }else{
+    var mino = gCurHold;
+    gCurHold = gCurMino;
+    gCurMino = mino;
+  }
 
-  </body>
-  </html>
+  gCurDir = INITIAL_DIR;
+  gCurX = INITIAL_X;
+  gCurY = INITIAL_Y;
+  gTSpinType = 0;
+  gNdCount = NATURAL_DROP_SPAN;
+
+}
+/*----------------------------------------------------------------------------------------
+ ���� �B�������Z�ɉ����ăm���}( REQuired features )�����炷 ����
+----------------------------------------------------------------------------------------*/
+function RemoveReq(features){
+  var index;
+  for(var i = 0; i < features.length; i++){
+    index = (features[i] > 100) ? 12 : features[i];
+    gCurProblemReq[index]--;
+    // T �X�s���Ȃ�ʏ�̏������̃m���}�����炷�B���Ƃ��� TST �Ȃ�g���v���̃m���}�����炷
+    switch(index){
+    case 6:
+    case 7:
+      gCurProblemReq[0]--;
+      break;
+    case 8:
+      gCurProblemReq[1]--;
+      break;
+    case 9:
+      gCurProblemReq[2]--;
+      break;
+    }
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �m���}�N���A? ����
+----------------------------------------------------------------------------------------*/
+function ReqIsCleared(){
+  for(var i = 0; i < gCurProblemReq.length; i++){
+    if(gCurProblemReq[i] > 0) return false;
+  }
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �w����W�Ƀ~�m��u����? ����
+----------------------------------------------------------------------------------------*/
+function PlaceTest(dir, mino, x, y){
+  var block;
+  for(var i = 0; i < 4; i++){
+    for(var j = 0; j < 4; j++){
+      if(IsValidPos(x + j, y + i)){
+        block = gBlocks[gMatrix[y + i][x + j]];
+        if(mino.shape[dir][i][j] == 1 && !block.passable) return false;
+      }else{
+        // �����ȏꏊ�Ńf�b�h���C������ȊO�Ȃ�u���Ȃ�
+        if(mino.shape[dir][i][j] == 1 &&
+                (x + j < 0 || MATRIX_WIDTH <= x + j || MATRIX_HEIGHT <= y + i)){
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �w����W�͔z��͈͓̔�? ����
+----------------------------------------------------------------------------------------*/
+function IsValidPos(x, y){
+  return (0 <= x && x < MATRIX_WIDTH && 0 <= y && y < MATRIX_HEIGHT);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ��ʏ�Ƀ~�m��`�� ����
+----------------------------------------------------------------------------------------*/
+function DisplayMino(dir, mino, x, y, blockId){
+  var block;  // 0=��, 1=����
+
+  for(var i = 0; i < 4; i++){
+    for(var j = 0; j < 4; j++){
+      DisplayBlock(x + j, y + i, mino.shape[dir][i][j] * blockId, true);
+    }
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �u���b�N�̕`�� ����
+
+ �}�g���b�N�X��̍��W(<x>, <y>)�� ID ��<blockId>�̃u���b�N��`�悵�܂��B <ignoresZero>��
+ true ���w�肷��ƁAID �� 0 �̃u���b�N��`�悵�܂���(�����Ƃ��Ĉ���)�B
+----------------------------------------------------------------------------------------*/
+function DisplayBlock(x, y, blockId, ignoresZero){
+  if(ignoresZero && blockId == 0) return;
+  if(CanDisplayPos(x, y)){
+     SetImage("m" + (y - DEADLINE_HEIGHT) + "_" + x, gBlocks[blockId].cache.src);
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �ʍs��? ����
+----------------------------------------------------------------------------------------*/
+function IsPassable(x, y){
+  if(x < 0 || MATRIX_WIDTH <= x || MATRIX_HEIGHT <= y) return false;
+  if(y < 0) return true;
+  return gBlocks[gMatrix[y][x]].passable;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �\������? ����
+----------------------------------------------------------------------------------------*/
+function CanDisplayPos(x, y){
+  return (0 <= x && x < MATRIX_WIDTH && DEADLINE_HEIGHT <= y && y < MATRIX_HEIGHT);
+}
+/*----------------------------------------------------------------------------------------
+ ���� �E��] ����
+----------------------------------------------------------------------------------------*/
+function RotateRight(){
+  Rotate(true);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ����] ����
+----------------------------------------------------------------------------------------*/
+function RotateLeft(){
+  Rotate(false);
+}
+/*----------------------------------------------------------------------------------------
+ ���� ��] ����
+
+ <toRight>�� true �Ȃ�E��]�Afalse �Ȃ獶��]�����܂��B
+----------------------------------------------------------------------------------------*/
+function Rotate(toRight){
+  var newDir = (gCurDir + (toRight ? 1 : 3)) % 4;
+  var rotRule = gCurMino.rotationRule;
+  var newX, newY;
+  var rotateRuleId;
+  // ��]���[���̃e�X�g�B���������甽�f
+  var canRotate = false;
+  for(var i = 0; i < ROTATE_RULES; i++){
+    newX = gCurX + rotRule.dx[toRight ? 0 : 1][gCurDir][i];
+    newY = gCurY + rotRule.dy[toRight ? 0 : 1][gCurDir][i];
+    if(PlaceTest(newDir, gCurMino, newX, newY)){
+      gCurX = newX;
+      gCurY = newY;
+      gCurDir = newDir;
+      canRotate = true;
+      rotateRuleId = i;
+      break;
+    }
+  }
+  if(canRotate){
+    SetTSpinType(i);
+    if(IsLanding()) gNdCount = NATURAL_DROP_SPAN;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� T-SPIN �������� ����
+
+ T-SPIN �s�����Ȃ� 0�AT-SPIN MINI �Ȃ� 1�AT-SPIN �Ȃ� 2 ��Ԃ��܂��B
+//----------------------------------------------------------------------------------------
+ ��]�����̒��Ŏ擾���Ă��������B
+ ���̏����𖞂����� T-SPIN �ɂȂ�܂��B
+ �E T �~�m�ł��邱��
+ �E�Ō�ɐ����������삪��]�ł���(���̊֐����Ăяo���O��)
+ �E�ʕ��̎��� 4 �u���b�N( �� �� �~ �̕���)�̂��� 3 �ӏ��ȏ�Ƀu���b�N������
+
+ ����Ɏ��̏����̂ǂ��炩�𖞂����� T-SPIN �ɁA�������Ȃ��� T-SPIN MINI �ɂȂ�܂��B
+ �E�ʕ��̗���( �� �̕���)�� 2 �ӏ��Ƃ��u���b�N������
+ �E���O�̉�]���� 5 ���( TST ���̉�]�A�u T-SPIN FIN �v��)�ł���
+
+ �������@�~�����@�~�@�~�@�����~
+ �������@�@�����@�������@����
+ �~�@�~�@�~�����@�������@�����~
+
+ ��]�ȊO�̑��삪���������Ƃ��� T-SPIN �t���O gTSpinType �� 0 �ɂ��Ă��������B
+//----------------------------------------------------------------------------------------
+ �ׂ��������̓\�t�g�ɂ���ĈقȂ�悤�ł��B�Ƃ肠�����A�ǏR��⊊�荞�݂� T-SPIN �� MINI
+ �Ɣ��肳��Ă���Ηǂ��Ǝv���܂��B
+----------------------------------------------------------------------------------------*/
+function SetTSpinType(rotateRuleId){
+  if(gCurMino != T) return 0;
+
+  var tsCnt = 0;
+  var tssCnt = 0;
+  var isBlock = false;
+  // TS ��������� TSS �����̉��ӏ��ɒʍs�s�u���b�N�����邩
+  for(var i = 0; i < T.shape[gCurDir].length; i++){
+    for(var j = 0; j < T.shape[gCurDir][i].length; j++){
+      if(IsValidPos(j + gCurX, i + gCurY)){
+        isBlock = !gBlocks[gMatrix[i + gCurY][j + gCurX]].passable;
+      }else{
+        isBlock = true;
+      }
+      if(isBlock){
+        if(gTsTiles[gCurDir][i][j] > 0) tsCnt++;
+        if(gTssTiles[gCurDir][i][j] > 0) tssCnt++;
+      }
+    }
+  }
+  // TSS �� TSM ���̔���
+  if(tsCnt >= 3){
+    gTSpinType = (tssCnt >= 2 || rotateRuleId == 4) ? 2 : 1;
+  }else{
+    gTSpinType = 0;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �\���𔽉f ����
+----------------------------------------------------------------------------------------*/
+function Refresh(){
+  RefreshMatrix();
+  RefreshQueue();
+  RefreshHold();
+}
+/*----------------------------------------------------------------------------------------
+ ���� �}�g���b�N�X���f ����
+----------------------------------------------------------------------------------------*/
+function RefreshMatrix(){
+  RefreshPlacedMino();
+  RefreshGhostAndGuide();
+  RefreshActiveMino();
+}
+/*----------------------------------------------------------------------------------------
+ ���� �ݒu�σu���b�N���f ����
+----------------------------------------------------------------------------------------*/
+function RefreshPlacedMino(){
+  for(var i = DEADLINE_HEIGHT; i < MATRIX_HEIGHT; i++){
+    for(var j = 0; j < MATRIX_WIDTH; j++){
+      SetImage("m" + (i - DEADLINE_HEIGHT) + "_" + j, gBlocks[gMatrix[i][j]].image);
+    }
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �������~�m���f ����
+----------------------------------------------------------------------------------------*/
+function RefreshActiveMino(){
+  if(gCurMino) DisplayMino(gCurDir, gCurMino, gCurX, gCurY, gCurMino.activeBlockId);
+}
+/*----------------------------------------------------------------------------------------
+ ���� �S�[�X�g�~�m�ƃK�C�h�~�m���f ����
+----------------------------------------------------------------------------------------*/
+function RefreshGhostAndGuide(){
+  if(!gCurMino) return;
+  var ghostBlks = MinoToBlockPositions(gCurDir, gCurMino, gCurX, gCurY + HarddropDiffY());
+  // �S�[�X�g�~�m�̕`��
+  for(var i = 0; i < ghostBlks.length; i++){
+    DisplayBlock(ghostBlks[i][0], ghostBlks[i][1], gCurMino.ghostBlockId, true);
+  }
+
+  var g = gCurGuide;
+  if(!g) return;
+  var guideBlks = MinoToBlockPositions(g.dir, g.mino, g.x, g.y + DEADLINE_HEIGHT);
+  // ���ʕ����̒T��
+  var ghostGuideBlks = [];
+  for(var i = 0; i < ghostBlks.length; i++){
+    for(var j = 0; j < guideBlks.length; j++){
+      if(ghostBlks[i][0] == guideBlks[j][0] && ghostBlks[i][1] == guideBlks[j][1]){
+        ghostGuideBlks.push([ghostBlks[i][0], ghostBlks[i][1]]);
+      }
+    }
+  }
+
+  // �K�C�h�~�m�̕`��
+  if(gCurProblem.useGuide || gCurUseGuideFlg){
+    for(var i = 0; i < guideBlks.length; i++){
+      DisplayBlock(guideBlks[i][0], guideBlks[i][1], g.mino.guideBlockId, true);
+    }
+
+    // ���ʕ����̕`��
+    for(var i = 0; i < ghostGuideBlks.length; i++){
+      DisplayBlock(ghostGuideBlks[i][0], ghostGuideBlks[i][1], String(g.mino.ghostGuideBlockId) + String(gCurMino.id), true);
+    }
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �l�N�X�g���f ����
+
+ ��( 0 )���ړ����̃u���b�N( 11 �` 17 )�̉摜��\�����܂��B1 �}�X���ɂ��炵�܂��B
+----------------------------------------------------------------------------------------*/
+function RefreshQueue(){
+  var mino;
+  var filename;
+  var i = 0;
+  while(i < Math.min(gQueue.length, NEXT_MINOS)){
+    mino = gQueue[i];
+    for(var j = 0; j < 3; j++){
+      for(var k = 0; k < 4; k++){
+        SetImage("n" + i + "_" + (j + 1) + "_" + k,
+                 gBlocks[mino.shape[0][j][k] * mino.activeBlockId].cache.src);
+      }
+    }
+    i++;
+  }
+  // ��
+  while(i < NEXT_MINOS){
+    for(var j = 0; j < 4; j++){
+      for(var k = 0; k < 4; k++){
+        SetImage("n" + i + "_" + j + "_" + k, gBlocks[0].cache.src);
+      }
+    }
+    i++;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �z�[���h���f ����
+
+ ��( 0 )���ړ����̃u���b�N( 11 �` 17 )�̉摜��\�����܂��B1 �}�X���ɂ��炵�܂��B
+----------------------------------------------------------------------------------------*/
+function RefreshHold(){
+  var mino;
+
+  mino = gCurHold;
+  if(mino){
+    for(var j = 0; j < 3; j++){
+      for(var k = 0; k < 4; k++){
+        SetImage("h" + (j + 1) + "_" + k,
+                 gBlocks[mino.shape[0][j][k] * mino.activeBlockId].cache.src);
+      }
+    }
+  }else{
+    // ��
+    for(var j = 0; j < 4; j++){
+      for(var k = 0; k < 4; k++){
+        SetImage("h" + j + "_" + k, gBlocks[0].cache.src);
+      }
+    }
+  }
+
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: ���b�X�����s ����
+----------------------------------------------------------------------------------------*/
+function ScenePerformFailed(){
+  switch(gButton){
+  case 'back':
+    gScene = 'select_section';
+    return;
+  }
+  if(IsPressed()) gScene = 'perform';
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: �K�C�h���[�h ����
+----------------------------------------------------------------------------------------*/
+function ScenePerformGuideMode(){
+  switch(gButton){
+  case 'back':
+    gScene = 'select_section';
+    return;
+  }
+  if(IsPressed()) gScene = 'perform';
+}
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: �N���A ����
+----------------------------------------------------------------------------------------*/
+function ScenePerformCleared(){
+  switch(gButton){
+  case 'back':
+    gScene = 'select_section';
+    return;
+  }
+  if(IsPressed()) AfterClear();
+}
+/*----------------------------------------------------------------------------------------
+ ���� �N���A��̃L�[���� ����
+
+ �u���10�v�Ȃ�΃Z�N�V�����ꗗ�ցA����ȊO�Ȃ玟�̖��ɐi�݂܂��B
+----------------------------------------------------------------------------------------*/
+function AfterClear(){
+  if(gCurProblemId >= gCurProgmeIdList.length - 1){
+    gScene = 'select_section';
+    gProblemsCleared[gCurSectionId] = true;
+    Save('Prg' + curSectionId, '1');
+  }
+  else{
+    gCurProblemId++;
+    gScene = 'perform';
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �e�L�[���̎擾 ����
+----------------------------------------------------------------------------------------*/
+function KeyL() {return gKeys[0]; }  // move Left
+function KeyR() {return gKeys[1]; }  // move Right
+function KeySD(){return gKeys[2]; }  // SoftDrop
+function KeyHD(){return gKeys[3]; }  // HardDrop
+function KeyRR(){return gKeys[4]; }  // Rotate Right
+function KeyRL(){return gKeys[5]; }  // Rotate Left
+function KeyH() {return gKeys[6]; }  // Hold
+function KeyG() {return gKeys[7]; }  // Guide
+/*----------------------------------------------------------------------------------------
+ ���� �V�[��: �ݒ� ����
+----------------------------------------------------------------------------------------*/
+function ScenePreferences(){
+  switch(gButton){
+  case 'ok':
+    if(SavePreferences()) gScene = 'select_section';
+    break;
+  case 'cancel':
+    gScene = 'select_section';
+    break;
+  }
+}
+/*----------------------------------------------------------------------------------------
+ ���� �ݒ�̕ۑ� ����
+
+ �ۑ��������������ǂ�����Ԃ��܂��B
+----------------------------------------------------------------------------------------*/
+function SavePreferences(){
+  // �d���s��
+  if(KeyDuplicates()){
+    alert("Duplicate Key Detected");
+    return false;
+  }
+  // �ݒ蔽�f
+  for(var i = 0; i < gKeys.length; i++){
+    gKeys[i] = document.getElementById(gSelectForms[i]).value;
+  }
+  // �N�b�L�[�ɕۑ�
+  Save('MoveLeft', gKeys[0]);
+  Save('MoveRight', gKeys[1]);
+  Save('SoftDrop', gKeys[2]);
+  Save('HardDrop', gKeys[3]);
+  Save('RotateRight', gKeys[4]);
+  Save('RotateLeft', gKeys[5]);
+  Save('Hold', gKeys[6]);
+  Save('Guide', gKeys[7]);
+  return true;
+}
+/*----------------------------------------------------------------------------------------
+ ���� �L�[���d��? ����
+
+ �e�Z���N�g�{�b�N�X���m�F���āA�d�������邩�ǂ����𔻒肵�ĕԂ��܂��B
+----------------------------------------------------------------------------------------*/
+function KeyDuplicates(){
+  var target1, target2;
+  for(var i = 0; i < gSelectForms.length; i++){
+    target1 = document.getElementById(gSelectForms[i]).value;
+    for(var j = i + 1; j < gSelectForms.length; j++){
+      target2 = document.getElementById(gSelectForms[j]).value;
+      if(target1 == target2) return true;
+    }
+  }
+  return false;
+}
