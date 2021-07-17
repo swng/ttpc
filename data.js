@@ -467,7 +467,7 @@ function SectionTitle(id){
     case 12: return '13 「LSIO Form」 Total 1 Pattern'; break;
     case 13: return '14 「LSIO Form」 12Q'; break;
     case 14: return '15 Final Exam 30Q'; break;
-    case 15: return '16 Grduation Exam （Mirrored Questions Included） 100Q'; break;
+    case 15: return '16 Graduation Exam（Mirrored Questions Included）100Q'; break;
     case 16: return '17 Other Solution Methods'; break;
     case 17: return '18 「I Mino Vertical Placement」 Total 514Q'; break;
     case 18: return '19 「I Mino Horizontal Placement」 Total 196Q'; break;
